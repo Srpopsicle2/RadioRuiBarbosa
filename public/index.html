@@ -170,15 +170,17 @@ input {
 </div>
 <script src="/socket.io/socket.io.js"> </script>
 <script>
+  const slides = document.getElementById("slides");
+  const totalSlides = slides.children.length;
   const audio = document.getElementById("audio");
   const ResetUser = true;
   let isUserPlaying = false;
   let User = localStorage.getItem("user") || "";
+  let slideIndex = 0;
 
   if (ResetUser == true) {
     localStorage.removeItem("user");
   }
-
 
   // 🔥 SOCKET
   const socket = io();
@@ -239,6 +241,13 @@ input {
   }
   
   setInterval(syncAudio, 3000);
+
+  
+  setInterval(() => {
+    slideIndex = (slideIndex + 1) % totalSlides;
+
+    slides.style.transform = `translateX(-${slideIndex * 100}%)`;
+  }, 5000);
   
   function toggleAudio(e) {
     if (isUserPlaying) {
