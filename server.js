@@ -193,13 +193,18 @@ app.post(
   requireAdmin,
   upload.array('musics'),
   async (req, res) => {
+
     await loadAudios();
+
+    currentIndex = 0;
+    startTime = Date.now();
 
     io.emit('playlistUpdated');
 
     res.json({
       success: true
     });
+
   }
 );
 
@@ -258,7 +263,12 @@ app.get('/logout', (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 loadAudios().then(() => {
+
+  currentIndex = 0;
+  startTime = Date.now();
+
   server.listen(3000, () => {
     console.log('Servidor rodando em http://localhost:3000');
   });
+
 });
