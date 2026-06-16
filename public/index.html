@@ -1,0 +1,339 @@
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Rádio Rb </title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: linear-gradient(135deg, #0a2185, #f18831);
+  color: white;
+}
+
+/* HEADER */
+header {
+  text-align: center;
+  padding: 20px;
+}
+
+/* PLAYER */
+.player {
+  text-align: center;
+
+  margin: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  background: #f18831;
+  color: white;
+  cursor: pointer;
+}
+
+/* SLIDER */
+.slider {
+  width: 90%;
+  max-width: 600px;
+  margin: auto;
+  overflow: hidden;
+}
+
+.slides {
+  display: flex;
+  transition: 0.5s;
+}
+
+.slides img {
+  width: 100%;
+}
+
+/* PROGRAMAÇÃO */
+.section {
+  padding: 20px;
+  text-align: center;
+}
+
+.card {
+  background: rgba(255,255,255,0.1);
+  margin: 10px auto;
+  padding: 15px;
+  border-radius: 15px;
+  width: 80%;
+}
+
+/* EQUIPE */
+.team {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.member {
+  margin: 10px;
+}
+
+.member img {
+  width: 100px;
+  border-radius: 50%;
+}
+
+/* CHAT */
+.chat {
+  background: rgba(0,0,0,0.2);
+  padding: 10px;
+  width: 90%;
+  max-width: 400px;
+  margin: auto;
+  border-radius: 15px;
+}
+
+.messages {
+  height: 150px;
+  overflow-y: auto;
+  text-align: left;
+  margin-bottom: 10px;
+}
+
+input {
+  width: 70%;
+  padding: 5px;
+  border-radius: 10px;
+  border: none;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>📻 Rádio RB </h1>
+  <p>onde cada voz vira frequência</p>
+</header>
+
+<!-- PLAYER -->
+<div class="player">
+  <button id="playButton" onclick="toggleAudio()">
+    ▶ Play
+  </button>
+  <audio id="audio">
+  </audio>
+</div>
+
+<!-- SLIDER -->
+<div class="slider">
+  <div class="slides" id="slides">
+    <img src="imagens/1.png">
+    <img src="imagens/2.png">
+    <img src="imagens/3.png">
+    <img src="imagens/4.png">
+    <img src="imagens/5.png">
+    <img src="imagens/6.png">
+    <img src="imagens/7.png">
+    <img src="imagens/8.png">
+    <img src="imagens/9.png">
+  </div>
+</div>
+
+<!-- PROGRAMAÇÃO -->
+<div class="section">
+  <h2>📅 Programação</h2>
+  <div class="card">08:00 - Música e Motivação</div>
+  <div class="card">10:00 - Notícias da Escola</div>
+  <div class="card">14:00 - Pedido dos Alunos</div>
+</div>
+
+<!-- EQUIPE -->
+<div class="section">
+  <h2>👥 Nossa Equipe</h2>
+  <div class="team">
+    <div class="member">
+      <img src="https://i.pravatar.cc/100">
+      <p>Locutor 1</p>
+    </div>
+    <div class="member">
+      <img src="https://i.pravatar.cc/101">
+      <p>Locutor 2</p>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="section">
+  <h2>💬 Chat dos ouvintes</h2>
+  <div class="chat">
+    <div class="messages" id="chatBox"> </div>
+    <input id="msg" placeholder="mande tua mensagem...">
+    <button onclick="sendMsg()">Enviar</button>
+  </div>
+</div>
+<script src="/socket.io/socket.io.js"> </script>
+<script>
+  const slides = document.getElementById("slides");
+  const totalSlides = slides.children.length;
+  const audio = document.getElementById("audio");
+  const ResetUser = true;
+  let isUserPlaying = false;
+  let User = localStorage.getItem("user") || "";
+  let slideIndex = 0;
+  
+  if (ResetUser === true) {
+    localStorage.removeItem("user");
+  }
+  
+  const socket = io();
+  
+  socket.on("volumeUpdate", volume => {
+    audio.volume = volume;
+  });
+  
+  fetch("/volume")
+    .then(r => r.json())
+    .then(data => {
+      if (typeof data.volume === "number") {
+        audio.volume = data.volume;
+      }
+    });
+  
+  socket.on("playlistUpdated", () => {
+    syncAudio();
+  });
+  
+  socket.on("pauseMusic", () => {
+    audio.pause();
+  });
+  
+  socket.on("speech", text => {
+    const estavaTocando = !audio.paused;
+  
+    audio.pause();
+  
+    const speech = new SpeechSynthesisUtterance(text);
+  
+    speech.lang = "pt-BR";
+    speech.rate = 1;
+    speech.pitch = 1;
+  
+    speech.onend = () => {
+      if (estavaTocando && isUserPlaying) {
+        audio.play().catch(() => {});
+      }
+    };
+  
+    speechSynthesis.speak(speech);
+  });
+  
+  socket.on("chat message", msg => {
+    const box = document.getElementById("chatBox");
+  
+    const p = document.createElement("p");
+    p.textContent = msg;
+  
+    box.appendChild(p);
+    box.scrollTop = box.scrollHeight;
+  });
+  
+  socket.on("chat history", msgs => {
+    const box = document.getElementById("chatBox");
+  
+    box.innerHTML = "";
+  
+    msgs.forEach(msg => {
+      const p = document.createElement("p");
+      p.textContent = msg;
+  
+      box.appendChild(p);
+    });
+  
+    box.scrollTop = box.scrollHeight;
+  });
+  
+  window.sendMsg = function () {
+    const input = document.getElementById("msg");
+  
+    if (!User) {
+      while (User === "") {
+        User = prompt("Fale seu usuário");
+      }
+  
+      localStorage.setItem("user", User);
+    }
+  
+    if (input.value !== "") {
+      socket.emit(
+        "chat message",
+        User + ": " + input.value
+      );
+  
+      input.value = "";
+    }
+  };
+  
+  async function syncAudio() {
+    try {
+      const res = await fetch("/status");
+      const data = await res.json();
+  
+      if (!data.music) return;
+  
+      const newSrc = "/audios/" + data.music;
+  
+      if (!audio.src.includes(data.music)) {
+        audio.src = newSrc;
+  
+        if (isUserPlaying) {
+          audio.play().catch(() => {});
+        }
+      }
+  
+      if (
+        Math.abs(
+          audio.currentTime - data.time
+        ) > 2
+      ) {
+        audio.currentTime = data.time;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  
+  syncAudio();
+  setInterval(syncAudio, 3000);
+  
+  setInterval(() => {
+    slideIndex =
+      (slideIndex + 1) % totalSlides;
+  
+    slides.style.transform =
+      `translateX(-${slideIndex * 100}%)`;
+  }, 5000);
+  
+  function toggleAudio() {
+    const btn =
+      document.getElementById(
+        "playButton"
+      );
+  
+    if (isUserPlaying) {
+      audio.pause();
+  
+      btn.innerText =
+        "▶ Play";
+    } else {
+      audio.play().catch(() => {});
+  
+      btn.innerText =
+        "⏸ Pause";
+    }
+  
+    isUserPlaying =
+      !isUserPlaying;
+  }
+  </script>
+
+</body>
+</html>
