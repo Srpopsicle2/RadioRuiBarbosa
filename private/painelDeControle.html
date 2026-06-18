@@ -165,6 +165,28 @@ button{
     border-color:lime;
     box-shadow:0 0 10px rgba(0,255,0,.5);
 }
+
+#PriorityButton{
+    background:#9c27b0;
+    color:white;
+}
+
+#PriorityButton:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 15px #9c27b0;
+}
+
+#PriorityResult{
+    margin-top:15px;
+    background:#222;
+    color:white;
+    padding:12px;
+    border-radius:10px;
+    min-height:50px;
+    text-align:center;
+    border:1px solid #444;
+}
+
 </style>
 </head>
 
@@ -238,6 +260,33 @@ button{
           </div>
         </div>
 
+        <div class="Subdivision">
+
+          <p class="DivText">
+              🔊 EFEITO SONORO
+          </p>
+      
+          <div class="UploadArea">
+      
+              <input
+                  type="file"
+                  id="PriorityAudio"
+                  accept=".mp3,audio/mpeg">
+      
+              <button id="PriorityButton">
+                  🔊 TOCAR EFEITO
+              </button>
+      
+          </div>
+      
+          <div id="PriorityResult">
+              Nenhum efeito enviado.
+          </div>
+      
+      </div>
+        
+        </div>
+        
     </div>
 
     <script>
@@ -255,7 +304,96 @@ button{
       
       CurrentSongsSection.style.display =
         ShowCurrentSongs ? "block" : "none";
-      
+
+        const PriorityAudio =
+          document.getElementById(
+            "PriorityAudio"
+          );
+
+        const PriorityButton =
+          document.getElementById(
+            "PriorityButton"
+          );
+
+        const PriorityResult =
+          document.getElementById(
+            "PriorityResult"
+          );
+
+        PriorityAudio.addEventListener(
+          "change",
+          () => {
+
+            const file =
+              PriorityAudio.files[0];
+
+            if (!file) {
+              PriorityResult.textContent =
+                "Nenhum efeito selecionado.";
+              return;
+            }
+
+            PriorityResult.textContent =
+              `📎 ${file.name}`;
+
+          }
+        );
+
+        PriorityButton.addEventListener(
+          "click",
+          async () => {
+
+            const file =
+              PriorityAudio.files[0];
+
+            if (!file) {
+
+              PriorityResult.textContent =
+                "Selecione um MP3.";
+
+              return;
+            }
+
+            PriorityResult.textContent =
+              "📤 Enviando efeito...";
+
+            const formData =
+              new FormData();
+
+            formData.append(
+              "audio",
+              file
+            );
+
+            try {
+
+              const res =
+                await fetch(
+                  "/priority-audio",
+                  {
+                    method: "POST",
+                    body: formData
+                  }
+                );
+
+              if (!res.ok) {
+                throw new Error();
+              }
+
+              PriorityResult.textContent =
+                "✅ Efeito enviado";
+
+              PriorityAudio.value = "";
+
+            } catch {
+
+              PriorityResult.textContent =
+                "❌ Erro ao enviar efeito";
+
+            }
+
+          }
+        );
       async function carregarVolume() {
       
         try {

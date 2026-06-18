@@ -47,6 +47,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 const audioUpload = multer({ dest: tempDir });
+const priorityUpload = multer({ storage: multer.memoryStorage() });
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -148,6 +149,26 @@ app.get('/volume', (req, res) => {
   });
 });
 
+app.post(
+  '/priority-audio',
+  requireAdmin,
+  priorityUpload.single('audio'),
+  (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhum áudio enviado'
+      });
+    }
+
+    io.emit('priorityAudio', req.file.buffer);
+
+    return res.json({
+      success: true
+    });
+  }
+);
+
 app.post('/volume', requireAdmin, (req, res) => {
   const { volume } = req.body;
 
@@ -193,7 +214,6 @@ app.post(
   requireAdmin,
   upload.array('musics'),
   async (req, res) => {
-
     await loadAudios();
 
     currentIndex = 0;
@@ -204,7 +224,6 @@ app.post(
     res.json({
       success: true
     });
-
   }
 );
 
@@ -263,12 +282,10 @@ app.get('/logout', (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 loadAudios().then(() => {
-
   currentIndex = 0;
   startTime = Date.now();
 
   server.listen(3000, () => {
     console.log('Servidor rodando em http://localhost:3000');
   });
-
 });
