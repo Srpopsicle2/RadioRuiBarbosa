@@ -340,9 +340,11 @@ input {
         }
       }
 
-      if (Math.abs(audio.currentTime - data.time) > 2) {
-        audio.currentTime = data.time;
-      }
+      if (
+        Math.abs(
+          audio.currentTime - data.time
+        ) > 10
+      )
     } catch (err) {
       console.error(err);
     }
