@@ -324,7 +324,6 @@ input {
       input.value = "";
     }
   };
-
   async function syncAudio() {
     try {
       const res = await fetch("/status");
@@ -346,7 +345,10 @@ input {
         Math.abs(
           audio.currentTime - data.time
         ) > 10
-      )
+      ) {
+        audio.currentTime = data.time;
+      }
+
     } catch (err) {
       console.error(err);
     }
@@ -358,7 +360,7 @@ input {
   setInterval(() => {
     slideIndex = (slideIndex + 1) % totalSlides;
     slides.style.transform = `translateX(-${slideIndex * 100}%)`;
-  }, 5000);
+  }, 1500);
 
   function toggleAudio() {
     if (isUserPlaying) {
