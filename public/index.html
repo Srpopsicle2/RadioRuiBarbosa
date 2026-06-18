@@ -358,7 +358,7 @@ input {
   setInterval(() => {
     slideIndex = (slideIndex + 1) % totalSlides;
     slides.style.transform = `translateX(-${slideIndex * 100}%)`;
-  }, 1200);
+  }, 5000);
 
   function toggleAudio() {
     if (isUserPlaying) {
