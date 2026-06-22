@@ -13,13 +13,11 @@ body {
   color: white;
 }
 
-/* HEADER */
 header {
   text-align: center;
   padding: 20px;
 }
 
-/* PLAYER */
 .player {
   text-align: center;
   margin: 20px;
@@ -34,7 +32,6 @@ button {
   cursor: pointer;
 }
 
-/* SLIDER */
 .slider {
   width: 90%;
   max-width: 600px;
@@ -51,7 +48,6 @@ button {
   width: 100%;
 }
 
-/* PROGRAMAÇÃO */
 .section {
   padding: 20px;
   text-align: center;
@@ -65,7 +61,6 @@ button {
   width: 80%;
 }
 
-/* EQUIPE */
 .team {
   display: flex;
   justify-content: center;
@@ -81,7 +76,6 @@ button {
   border-radius: 50%;
 }
 
-/* CHAT */
 .chat {
   background: rgba(0,0,0,0.2);
   padding: 10px;
@@ -114,15 +108,11 @@ input {
   <p>onde cada voz vira frequência</p>
 </header>
 
-<!-- PLAYER -->
 <div class="player">
-  <button id="playButton" onclick="toggleAudio()">
-    ▶ Play
-  </button>
+  <button id="playButton" onclick="toggleAudio()">▶ Play</button>
   <audio id="audio"></audio>
 </div>
 
-<!-- SLIDER -->
 <div class="slider">
   <div class="slides" id="slides">
     <img src="imagens/1.png">
@@ -134,12 +124,11 @@ input {
     <img src="imagens/7.png">
     <img src="imagens/8.png">
     <img src="imagens/9.png">
-    <img src="imagens/10.png">   
-    <img src="imagens/11.png">   
+    <img src="imagens/10.png">
+    <img src="imagens/11.png">
   </div>
 </div>
 
-<!-- PROGRAMAÇÃO -->
 <div class="section">
   <h2>📅 Programação</h2>
   <div class="card">08:00 - Música e Motivação</div>
@@ -147,7 +136,6 @@ input {
   <div class="card">14:00 - Pedido dos Alunos</div>
 </div>
 
-<!-- EQUIPE -->
 <div class="section">
   <h2>👥 Nossa Equipe</h2>
   <div class="team">
@@ -162,7 +150,6 @@ input {
   </div>
 </div>
 
-<!-- CHAT -->
 <div class="section">
   <h2>💬 Chat dos ouvintes</h2>
   <div class="chat">
@@ -174,320 +161,267 @@ input {
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-  const slides = document.getElementById("slides");
-  const totalSlides = slides.children.length;
-  const audio = document.getElementById("audio");
-  const playButton = document.getElementById("playButton");
+const slides = document.getElementById("slides");
+const totalSlides = slides.children.length;
+const audio = document.getElementById("audio");
+const playButton = document.getElementById("playButton");
 
-  const ResetUser = true;
-  let isUserPlaying = false;
-  let User = localStorage.getItem("user") || "";
-  let slideIndex = 0;
-  let speechPlaying = false;
+const ResetUser = true;
+let isUserPlaying = false;
+let User = localStorage.getItem("user") || "";
+let slideIndex = 0;
 
-  if (ResetUser === true) {
-    localStorage.removeItem("user");
+let currentOverlayAudio = null;
+let overlayType = null;
+let resumeMusicAfterOverlay = false;
+let overlayPausedByUser = false;
+let syncBlocked = false;
+
+if (ResetUser === true) {
+  localStorage.removeItem("user");
+}
+
+const socket = io();
+
+function updatePlayButton() {
+  const somethingPlaying =
+    (currentOverlayAudio && !currentOverlayAudio.paused) ||
+    (!audio.paused && isUserPlaying);
+
+  playButton.innerText = somethingPlaying ? "⏸ Pause" : "▶ Play";
+}
+
+function stopOverlay() {
+  if (currentOverlayAudio) {
+    currentOverlayAudio.pause();
+    currentOverlayAudio.currentTime = 0;
+    currentOverlayAudio = null;
   }
 
-  const socket = io();
+  overlayType = null;
+  overlayPausedByUser = false;
+  resumeMusicAfterOverlay = false;
+}
 
-  socket.on("volumeUpdate", volume => {
-    audio.volume = volume;
-  });
+function pauseEverythingForOverlay() {
+  if (!audio.paused) {
+    resumeMusicAfterOverlay = isUserPlaying;
+  } else {
+    resumeMusicAfterOverlay = false;
+  }
 
-  fetch("/volume")
-    .then(r => r.json())
-    .then(data => {
-      if (typeof data.volume === "number") {
-        audio.volume = data.volume;
-      }
-    });
+  audio.pause();
+  syncBlocked = true;
+}
 
-  socket.on("playlistUpdated", () => {
-    syncAudio();
-  });
+function finishOverlayAndResumeMusic() {
+  currentOverlayAudio = null;
+  overlayType = null;
+  overlayPausedByUser = false;
 
-  socket.on(
-    "priorityAudio",
-    audioBuffer => {
+  if (resumeMusicAfterOverlay && isUserPlaying) {
+    syncBlocked = false;
+    audio.play().catch(() => {});
+  } else {
+    syncBlocked = false;
+  }
 
-      const estavaTocando =
-        !audio.paused;
+  updatePlayButton();
+}
 
-      audio.pause();
+function createOverlayAudio(audioBuffer, mimeType) {
+  let bytes;
 
-      let bytes;
+  if (audioBuffer instanceof ArrayBuffer) {
+    bytes = new Uint8Array(audioBuffer);
+  } else if (audioBuffer && audioBuffer.data) {
+    bytes = new Uint8Array(audioBuffer.data);
+  } else if (audioBuffer instanceof Uint8Array) {
+    bytes = audioBuffer;
+  } else if (Array.isArray(audioBuffer)) {
+    bytes = new Uint8Array(audioBuffer);
+  } else {
+    bytes = new Uint8Array(audioBuffer);
+  }
 
-      if (
-        audioBuffer instanceof ArrayBuffer
-      ) {
+  const blob = new Blob([bytes], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const overlay = new Audio(url);
 
-        bytes =
-          new Uint8Array(
-            audioBuffer
-          );
+  overlay.onended = () => {
+    URL.revokeObjectURL(url);
+    finishOverlayAndResumeMusic();
+  };
 
-      } else if (
-        audioBuffer &&
-        audioBuffer.data
-      ) {
+  overlay.onerror = () => {
+    URL.revokeObjectURL(url);
+    finishOverlayAndResumeMusic();
+  };
 
-        bytes =
-          new Uint8Array(
-            audioBuffer.data
-          );
+  return overlay;
+}
 
-      } else if (
-        audioBuffer instanceof Uint8Array
-      ) {
+socket.on("volumeUpdate", volume => {
+  audio.volume = volume;
+});
 
-        bytes = audioBuffer;
-
-      } else {
-
-        bytes =
-          new Uint8Array(
-            audioBuffer
-          );
-
-      }
-
-      const blob =
-        new Blob(
-          [bytes],
-          {
-            type:
-              "audio/mpeg"
-          }
-        );
-
-      const url =
-        URL.createObjectURL(
-          blob
-        );
-
-      const aviso =
-        new Audio(url);
-
-      aviso.onended = () => {
-
-        URL.revokeObjectURL(
-          url
-        );
-
-        if (
-          estavaTocando &&
-          isUserPlaying
-        ) {
-
-          audio.play()
-            .catch(() => {});
-
-        }
-
-      };
-
-      aviso.onerror = err => {
-
-        console.error(
-          "Erro aviso:",
-          err
-        );
-
-        URL.revokeObjectURL(
-          url
-        );
-
-        if (
-          estavaTocando &&
-          isUserPlaying
-        ) {
-
-          audio.play()
-            .catch(() => {});
-
-        }
-
-      };
-
-      aviso.play()
-        .catch(err => {
-
-          console.error(
-            err
-          );
-
-        });
-
-    }
-  );
-
-  socket.on("pauseMusic", () => {
-    audio.pause();
-  });
-
-  socket.on("speech", text => {
-    const estavaTocando = !audio.paused;
-
-    audio.pause();
-
-    const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = "pt-BR";
-    speech.rate = 1;
-    speech.pitch = 1;
-
-    speech.onend = () => {
-      if (estavaTocando && isUserPlaying) {
-        audio.play().catch(() => {});
-      }
-    };
-
-    speechSynthesis.speak(speech);
-  });
-
-  socket.on("speechAudio", audioBuffer => {
-    try {
-      const estavaTocando = !audio.paused;
-      audio.pause();
-
-      let bytes;
-
-      if (audioBuffer instanceof ArrayBuffer) {
-        bytes = new Uint8Array(audioBuffer);
-      } else if (audioBuffer && audioBuffer.data) {
-        bytes = new Uint8Array(audioBuffer.data);
-      } else if (Array.isArray(audioBuffer)) {
-        bytes = new Uint8Array(audioBuffer);
-      } else {
-        bytes = new Uint8Array(audioBuffer);
-      }
-
-      const blob = new Blob([bytes], { type: "audio/webm" });
-      const url = URL.createObjectURL(blob);
-      const voz = new Audio(url);
-
-      speechPlaying = true;
-
-      voz.onended = () => {
-        speechPlaying = false;
-        URL.revokeObjectURL(url);
-
-        if (estavaTocando && isUserPlaying) {
-          audio.play().catch(() => {});
-        }
-      };
-
-      voz.onerror = () => {
-        speechPlaying = false;
-        URL.revokeObjectURL(url);
-
-        if (estavaTocando && isUserPlaying) {
-          audio.play().catch(() => {});
-        }
-      };
-
-      voz.play().catch(() => {
-        speechPlaying = false;
-        URL.revokeObjectURL(url);
-
-        if (estavaTocando && isUserPlaying) {
-          audio.play().catch(() => {});
-        }
-      });
-    } catch (err) {
-      console.error("Erro ao tocar speechAudio:", err);
+fetch("/volume")
+  .then(r => r.json())
+  .then(data => {
+    if (typeof data.volume === "number") {
+      audio.volume = data.volume;
     }
   });
 
-  socket.on("chat message", msg => {
-    const box = document.getElementById("chatBox");
+socket.on("playlistUpdated", () => {
+  syncAudio();
+});
 
+socket.on("priorityAudio", audioBuffer => {
+  if (currentOverlayAudio) {
+    currentOverlayAudio.pause();
+    currentOverlayAudio.currentTime = 0;
+    currentOverlayAudio = null;
+  }
+
+  pauseEverythingForOverlay();
+
+  currentOverlayAudio = createOverlayAudio(audioBuffer, "audio/mpeg");
+  overlayType = "priority";
+  overlayPausedByUser = false;
+
+  currentOverlayAudio.play().then(() => {
+    updatePlayButton();
+  }).catch(() => {
+    finishOverlayAndResumeMusic();
+  });
+});
+
+socket.on("speechAudio", audioBuffer => {
+  if (currentOverlayAudio) {
+    currentOverlayAudio.pause();
+    currentOverlayAudio.currentTime = 0;
+    currentOverlayAudio = null;
+  }
+
+  pauseEverythingForOverlay();
+
+  currentOverlayAudio = createOverlayAudio(audioBuffer, "audio/webm");
+  overlayType = "speech";
+  overlayPausedByUser = false;
+
+  currentOverlayAudio.play().then(() => {
+    updatePlayButton();
+  }).catch(() => {
+    finishOverlayAndResumeMusic();
+  });
+});
+
+socket.on("chat message", msg => {
+  const box = document.getElementById("chatBox");
+  const p = document.createElement("p");
+  p.textContent = msg;
+  box.appendChild(p);
+  box.scrollTop = box.scrollHeight;
+});
+
+socket.on("chat history", msgs => {
+  const box = document.getElementById("chatBox");
+  box.innerHTML = "";
+
+  msgs.forEach(msg => {
     const p = document.createElement("p");
     p.textContent = msg;
-
     box.appendChild(p);
-    box.scrollTop = box.scrollHeight;
   });
 
-  socket.on("chat history", msgs => {
-    const box = document.getElementById("chatBox");
+  box.scrollTop = box.scrollHeight;
+});
 
-    box.innerHTML = "";
+window.sendMsg = function () {
+  const input = document.getElementById("msg");
 
-    msgs.forEach(msg => {
-      const p = document.createElement("p");
-      p.textContent = msg;
-      box.appendChild(p);
-    });
-
-    box.scrollTop = box.scrollHeight;
-  });
-
-  window.sendMsg = function () {
-    const input = document.getElementById("msg");
-
-    if (!User) {
-      while (User === "") {
-        User = prompt("Fale seu usuário");
-      }
-
-      localStorage.setItem("user", User);
+  if (!User) {
+    while (User === "") {
+      User = prompt("Fale seu usuário");
     }
 
-    if (input.value !== "") {
-      socket.emit("chat message", User + ": " + input.value);
-      input.value = "";
-    }
-  };
-  async function syncAudio() {
-    try {
-      const res = await fetch("/status");
-      const data = await res.json();
+    localStorage.setItem("user", User);
+  }
 
-      if (!data.music) return;
+  if (input.value !== "") {
+    socket.emit("chat message", User + ": " + input.value);
+    input.value = "";
+  }
+};
 
-      const newSrc = "/audios/" + data.music;
+async function syncAudio() {
+  try {
+    if (syncBlocked) return;
 
-      if (!audio.src.includes(data.music)) {
-        audio.src = newSrc;
+    const res = await fetch("/status");
+    const data = await res.json();
 
-        if (isUserPlaying && !speechPlaying) {
-          audio.play().catch(() => {});
-        }
+    if (!data.music) return;
+
+    const newSrc = "/audios/" + encodeURIComponent(data.music);
+
+    if (!audio.src.includes(encodeURIComponent(data.music)) && !audio.src.includes(data.music)) {
+      audio.src = newSrc;
+      audio.load();
+
+      if (isUserPlaying && !currentOverlayAudio) {
+        audio.play().catch(() => {});
       }
+    }
 
-      if (
-        Math.abs(
-          audio.currentTime - data.time
-        ) > 10
-      ) {
+    if (!currentOverlayAudio && Math.abs(audio.currentTime - data.time) > 10) {
+      try {
         audio.currentTime = data.time;
-      }
-
-    } catch (err) {
-      console.error(err);
+      } catch {}
     }
+  } catch (err) {
+    console.error(err);
   }
+}
 
-  syncAudio();
-  setInterval(syncAudio, 3000);
+audio.addEventListener("ended", () => {
+  setTimeout(syncAudio, 300);
+});
 
-  setInterval(() => {
-    slideIndex = (slideIndex + 1) % totalSlides;
-    slides.style.transform = `translateX(-${slideIndex * 100}%)`;
-  }, 1500);
+syncAudio();
+setInterval(syncAudio, 3000);
 
-  function toggleAudio() {
-    if (isUserPlaying) {
-      audio.pause();
-      playButton.innerText = "▶ Play";
+setInterval(() => {
+  slideIndex = (slideIndex + 1) % totalSlides;
+  slides.style.transform = `translateX(-${slideIndex * 100}%)`;
+}, 1500);
+
+function toggleAudio() {
+  if (currentOverlayAudio) {
+    if (currentOverlayAudio.paused) {
+      currentOverlayAudio.play().then(() => {
+        overlayPausedByUser = false;
+        updatePlayButton();
+      }).catch(() => {});
     } else {
-      audio.play().catch(() => {});
-      playButton.innerText = "⏸ Pause";
+      currentOverlayAudio.pause();
+      overlayPausedByUser = true;
+      updatePlayButton();
     }
-
-    isUserPlaying = !isUserPlaying;
+    return;
   }
+
+  if (isUserPlaying) {
+    audio.pause();
+    isUserPlaying = false;
+  } else {
+    isUserPlaying = true;
+    audio.play().catch(() => {});
+  }
+
+  updatePlayButton();
+}
 </script>
 
 </body>
