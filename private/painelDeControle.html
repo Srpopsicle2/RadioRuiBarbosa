@@ -1,692 +1,443 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Controle</title>
 
-<title>Painel de Controle</title>
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
 
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
+    body{
+      background: linear-gradient(135deg,#0b5d1e,#1b8d36);
+      min-height:100vh;
+      font-family:Georgia, 'Times New Roman', Times, serif;
+    }
 
-body{
-    background: linear-gradient(135deg,#0b5d1e,#1b8d36);
-    min-height:100vh;
-    font-family:Georgia, 'Times New Roman', Times, serif;
-}
+    header{
+      background-color:#111;
+      padding:20px;
+      box-shadow:0 4px 10px rgba(0,0,0,.4);
+    }
 
-header{
-    background-color:#111;
-    padding:20px;
-    box-shadow:0 4px 10px rgba(0,0,0,.4);
-}
+    #Title{
+      color:white;
+      text-align:center;
+      letter-spacing:3px;
+      text-shadow:0 0 10px lime;
+    }
 
-#Title{
-    color:white;
-    text-align:center;
-    letter-spacing:3px;
-    text-shadow:0 0 10px lime;
-}
+    .Container{
+      width:80%;
+      max-width:700px;
+      margin:40px auto;
+    }
 
-.Container{
-    width:80%;
-    max-width:700px;
-    margin:40px auto;
-}
+    .Subdivision{
+      background:#111;
+      border-radius:15px;
+      padding:25px;
+      margin-bottom:25px;
+      box-shadow:0 5px 15px rgba(0,0,0,.4);
+    }
 
-.Subdivision{
-    background:#111;
-    border-radius:15px;
-    padding:25px;
-    margin-bottom:25px;
-    box-shadow:0 5px 15px rgba(0,0,0,.4);
-}
+    .DivText{
+      color:white;
+      text-align:center;
+      font-size:22px;
+      margin-bottom:15px;
+    }
 
-.DivText{
-    color:white;
-    text-align:center;
-    font-size:22px;
-    margin-bottom:15px;
-}
+    #volume-slider{
+      width:100%;
+      cursor:pointer;
+    }
 
-#volume-slider{
-    width:100%;
-    cursor:pointer;
-}
+    .UploadArea{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
 
-.UploadArea{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-}
+    #MusicUpload,
+    #PriorityAudio{
+      color:white;
+    }
 
-#MusicUpload{
-    color:white;
-}
+    #FileList{
+      color:white;
+      margin-top:15px;
+      text-align:center;
+    }
 
-#FileList{
-    color:white;
-    margin-top:15px;
-    text-align:center;
-}
+    button{
+      display:block;
+      margin:auto;
+      width:220px;
+      padding:15px;
+      border:none;
+      border-radius:10px;
+      font-size:18px;
+      font-weight:bold;
+      cursor:pointer;
+      transition:.3s;
+    }
 
-button{
-    display:block;
-    margin:auto;
-    width:220px;
-    padding:15px;
-    border:none;
-    border-radius:10px;
-    font-size:18px;
-    font-weight:bold;
-    cursor:pointer;
-    transition:.3s;
-}
+    #PostButton{
+      background:#2196F3;
+      color:white;
+    }
 
-#PostButton{
-    background:#2196F3;
-    color:white;
-}
+    #PostButton:hover{
+      transform:scale(1.05);
+      box-shadow:0 0 15px #2196F3;
+    }
 
-#PostButton:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 15px #2196F3;
-}
+    #SpeechButton{
+      background:#4caf50;
+      color:white;
+    }
 
-#SpeechButton{
-    background:#4caf50;
-    color:white;
-}
+    #SpeechButton:hover{
+      transform:scale(1.05);
+      box-shadow:0 0 15px #4caf50;
+    }
 
-#SpeechButton:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 15px #4caf50;
-}
+    #SpeechResult{
+      margin-top:15px;
+      background:#222;
+      color:white;
+      padding:12px;
+      border-radius:10px;
+      min-height:50px;
+      text-align:center;
+      border:1px solid #444;
+      word-break:break-word;
+      font-size:16px;
+    }
 
-#SpeechResult{
-    margin-top:15px;
-    background:#222;
-    color:white;
-    padding:12px;
-    border-radius:10px;
-    min-height:50px;
-    text-align:center;
-    border:1px solid #444;
-    word-break:break-word;
-    font-size:16px;
-}
+    #MusicGrid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:15px;
+    }
 
-#TextToSpeechButton{
-    background:#ff9800;
-    color:black;
-}
+    .MusicCard{
+      background:#222;
+      color:white;
+      padding:15px;
+      border-radius:10px;
+      text-align:center;
+      border:1px solid #444;
+      transition:.3s;
+    }
 
-#TextToSpeechButton:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 15px #ff9800;
-}
+    .MusicCard:hover{
+      transform:scale(1.03);
+      border-color:lime;
+      box-shadow:0 0 10px rgba(0,255,0,.5);
+    }
 
+    #PriorityButton{
+      background:#9c27b0;
+      color:white;
+    }
 
+    #PriorityButton:hover{
+      transform:scale(1.05);
+      box-shadow:0 0 15px #9c27b0;
+    }
 
-#ReturnButton{
-    background:#ff4040;
-    color:white;
-}
-
-#ReturnButton:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 15px #ff4040;
-}
-
-#MusicGrid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    gap:15px;
-}
-
-.MusicCard{
-    background:#222;
-    color:white;
-    padding:15px;
-    border-radius:10px;
-    text-align:center;
-    border:1px solid #444;
-    transition:.3s;
-}
-
-.MusicCard:hover{
-    transform:scale(1.03);
-    border-color:lime;
-    box-shadow:0 0 10px rgba(0,255,0,.5);
-}
-
-#PriorityButton{
-    background:#9c27b0;
-    color:white;
-}
-
-#PriorityButton:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 15px #9c27b0;
-}
-
-#PriorityResult{
-    margin-top:15px;
-    background:#222;
-    color:white;
-    padding:12px;
-    border-radius:10px;
-    min-height:50px;
-    text-align:center;
-    border:1px solid #444;
-}
-
-</style>
+    #PriorityResult{
+      margin-top:15px;
+      background:#222;
+      color:white;
+      padding:12px;
+      border-radius:10px;
+      min-height:50px;
+      text-align:center;
+      border:1px solid #444;
+    }
+  </style>
 </head>
 
 <body>
-
-<header>
+  <header>
     <h1 id="Title">🎛️ PAINEL DE CONTROLE</h1>
-</header>
+  </header>
 
-<div class="Container">
-
+  <div class="Container">
     <div class="Subdivision">
-        <p class="DivText">🔊 VOLUME GLOBAL</p>
+      <p class="DivText">🔊 VOLUME GLOBAL</p>
 
-        <input
-            type="range"
-            id="volume-slider"
-            min="0"
-            max="200"
-            step="1"
-            value="100">
+      <input
+        type="range"
+        id="volume-slider"
+        min="0"
+        max="200"
+        step="1"
+        value="100">
     </div>
 
     <div class="Subdivision">
+      <p class="DivText">🎵 GERENCIAMENTO DE MÚSICAS</p>
 
-        <p class="DivText">🎵 GERENCIAMENTO DE MÚSICAS</p>
+      <div class="UploadArea">
+        <input
+          type="file"
+          id="MusicUpload"
+          accept=".mp3,audio/mpeg"
+          multiple>
 
-        <div class="UploadArea">
+        <button id="PostButton">📤 POSTAR</button>
+      </div>
 
-            <input
-                type="file"
-                id="MusicUpload"
-                accept=".mp3,audio/mpeg"
-                multiple>
-
-            <button id="PostButton">
-                📤 POSTAR
-            </button>
-
-        </div>
-
-        <div id="FileList"></div>
-
+      <div id="FileList"></div>
     </div>
 
     <div class="Subdivision" id="CurrentSongsSection">
-
-        <p class="DivText">🎶 MÚSICAS ATUAIS</p>
-    
-        <div id="MusicGrid">
-    
-            <div class="MusicCard">Musica 1.mp3</div>
-            <div class="MusicCard">Musica 2.mp3</div>
-            <div class="MusicCard">Musica 3.mp3</div>
-            <div class="MusicCard">Musica 4.mp3</div>
-    
-        </div>
-    
+      <p class="DivText">🎶 MÚSICAS ATUAIS</p>
+      <div id="MusicGrid"></div>
     </div>
 
     <div class="Subdivision">
+      <p class="DivText">🎤 CONTROLE DE FALA POR MICROFONE</p>
 
-          <p class="DivText">🎤 CONTROLE DE FALA</p>
-      
-          <button id="SpeechButton">
-              🎙️ MICROFONE AO VIVO
-          </button>
-      
-          <div id="SpeechResult">
-              Nenhuma fala detectada.
-          </div>
-        </div>
+      <button id="SpeechButton">🎙️ MICROFONE AO VIVO</button>
 
-        <div class="Subdivision">
-
-          <p class="DivText">
-              🔊 EFEITO SONORO
-          </p>
-      
-          <div class="UploadArea">
-      
-              <input
-                  type="file"
-                  id="PriorityAudio"
-                  accept=".mp3,audio/mpeg">
-      
-              <button id="PriorityButton">
-                  🔊 TOCAR EFEITO
-              </button>
-      
-          </div>
-      
-          <div id="PriorityResult">
-              Nenhum efeito enviado.
-          </div>
-      
-      </div>
-        
-        </div>
-        
+      <div id="SpeechResult">Nenhuma fala detectada.</div>
     </div>
 
-    <script>
-      const SpeechButton = document.getElementById("SpeechButton");
-      const SpeechResult = document.getElementById("SpeechResult");
-      
-      const PostButton = document.getElementById("PostButton");
-      const VolumeSlider = document.getElementById("volume-slider");
-      const CurrentSongsSection = document.getElementById("CurrentSongsSection");
-      const MusicGrid = document.getElementById("MusicGrid");
-      const MusicUpload = document.getElementById("MusicUpload");
-      const FileList = document.getElementById("FileList");
-      
-      const ShowCurrentSongs = true;
-      
-      CurrentSongsSection.style.display =
-        ShowCurrentSongs ? "block" : "none";
+    <div class="Subdivision">
+      <p class="DivText">🔊 EFEITO SONORO</p>
 
-        const PriorityAudio =
-          document.getElementById(
-            "PriorityAudio"
-          );
+      <div class="UploadArea">
+        <input
+          type="file"
+          id="PriorityAudio"
+          accept=".mp3,audio/mpeg">
 
-        const PriorityButton =
-          document.getElementById(
-            "PriorityButton"
-          );
+        <button id="PriorityButton">🔊 TOCAR EFEITO</button>
+      </div>
 
-        const PriorityResult =
-          document.getElementById(
-            "PriorityResult"
-          );
+      <div id="PriorityResult">Nenhum efeito enviado.</div>
+    </div>
+  </div>
 
-        PriorityAudio.addEventListener(
-          "change",
-          () => {
+  <script>
+    const SpeechButton = document.getElementById("SpeechButton");
+    const SpeechResult = document.getElementById("SpeechResult");
 
-            const file =
-              PriorityAudio.files[0];
+    const PostButton = document.getElementById("PostButton");
+    const VolumeSlider = document.getElementById("volume-slider");
+    const CurrentSongsSection = document.getElementById("CurrentSongsSection");
+    const MusicGrid = document.getElementById("MusicGrid");
+    const MusicUpload = document.getElementById("MusicUpload");
+    const FileList = document.getElementById("FileList");
 
-            if (!file) {
-              PriorityResult.textContent =
-                "Nenhum efeito selecionado.";
-              return;
+    const PriorityAudio = document.getElementById("PriorityAudio");
+    const PriorityButton = document.getElementById("PriorityButton");
+    const PriorityResult = document.getElementById("PriorityResult");
+
+    const ShowCurrentSongs = true;
+    CurrentSongsSection.style.display = ShowCurrentSongs ? "block" : "none";
+
+    async function carregarVolume() {
+      try {
+        const res = await fetch("/volume");
+        const data = await res.json();
+        VolumeSlider.value = Math.round(data.volume * 100);
+      } catch {}
+    }
+
+    async function carregarMusicas() {
+      try {
+        const res = await fetch("/playlist");
+        const musics = await res.json();
+
+        MusicGrid.innerHTML = "";
+
+        if (!musics.length) {
+          const card = document.createElement("div");
+          card.className = "MusicCard";
+          card.textContent = "Nenhuma música enviada.";
+          MusicGrid.appendChild(card);
+          return;
+        }
+
+        musics.forEach(music => {
+          const card = document.createElement("div");
+          card.className = "MusicCard";
+          card.textContent = music.name;
+          MusicGrid.appendChild(card);
+        });
+      } catch {}
+    }
+
+    VolumeSlider.addEventListener("input", async () => {
+      const volume = VolumeSlider.value / 100;
+
+      try {
+        await fetch("/volume", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ volume })
+        });
+      } catch {}
+    });
+
+    MusicUpload.addEventListener("change", () => {
+      FileList.innerHTML = "";
+
+      [...MusicUpload.files].forEach(file => {
+        const div = document.createElement("div");
+        div.textContent = file.name;
+        div.style.color = "white";
+        FileList.appendChild(div);
+      });
+    });
+
+    PostButton.addEventListener("click", async () => {
+      if (MusicUpload.files.length === 0) {
+        alert("Selecione uma música.");
+        return;
+      }
+
+      const formData = new FormData();
+
+      for (const file of MusicUpload.files) {
+        formData.append("musics", file);
+      }
+
+      try {
+        const res = await fetch("/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) {
+          throw new Error();
+        }
+
+        alert("Músicas enviadas com sucesso.");
+        MusicUpload.value = "";
+        FileList.innerHTML = "";
+        carregarMusicas();
+      } catch {
+        alert("Erro ao enviar músicas.");
+      }
+    });
+
+    PriorityAudio.addEventListener("change", () => {
+      const file = PriorityAudio.files[0];
+
+      if (!file) {
+        PriorityResult.textContent = "Nenhum efeito selecionado.";
+        return;
+      }
+
+      PriorityResult.textContent = `📎 ${file.name}`;
+    });
+
+    PriorityButton.addEventListener("click", async () => {
+      const file = PriorityAudio.files[0];
+
+      if (!file) {
+        PriorityResult.textContent = "Selecione um MP3.";
+        return;
+      }
+
+      PriorityResult.textContent = "📤 Enviando efeito...";
+
+      const formData = new FormData();
+      formData.append("audio", file);
+
+      try {
+        const res = await fetch("/priority-audio", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) {
+          throw new Error();
+        }
+
+        PriorityResult.textContent = "✅ Efeito enviado";
+        PriorityAudio.value = "";
+      } catch {
+        PriorityResult.textContent = "❌ Erro ao enviar efeito";
+      }
+    });
+
+    let mediaRecorder;
+    let audioChunks = [];
+    let gravando = false;
+
+    SpeechButton.addEventListener("click", async () => {
+      try {
+        if (!gravando) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true
+          });
+
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = event => {
+            if (event.data && event.data.size > 0) {
+              audioChunks.push(event.data);
             }
+          };
 
-            PriorityResult.textContent =
-              `📎 ${file.name}`;
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, {
+              type: "audio/webm"
+            });
 
-          }
-        );
-
-        PriorityButton.addEventListener(
-          "click",
-          async () => {
-
-            const file =
-              PriorityAudio.files[0];
-
-            if (!file) {
-
-              PriorityResult.textContent =
-                "Selecione um MP3.";
-
-              return;
-            }
-
-            PriorityResult.textContent =
-              "📤 Enviando efeito...";
-
-            const formData =
-              new FormData();
-
-            formData.append(
-              "audio",
-              file
-            );
+            const formData = new FormData();
+            formData.append("audio", audioBlob, "microfone.webm");
 
             try {
-
-              const res =
-                await fetch(
-                  "/priority-audio",
-                  {
-                    method: "POST",
-                    body: formData
-                  }
-                );
+              const res = await fetch("/speech-audio", {
+                method: "POST",
+                body: formData
+              });
 
               if (!res.ok) {
                 throw new Error();
               }
 
-              PriorityResult.textContent =
-                "✅ Efeito enviado";
-
-              PriorityAudio.value = "";
-
+              SpeechResult.textContent = "✅ Áudio enviado";
             } catch {
-
-              PriorityResult.textContent =
-                "❌ Erro ao enviar efeito";
-
+              SpeechResult.textContent = "❌ Erro ao enviar áudio";
             }
+          };
 
-          }
-        );
-      async function carregarVolume() {
-      
-        try {
-      
-          const res =
-            await fetch("/volume");
-      
-          const data =
-            await res.json();
-      
-          VolumeSlider.value =
-            Math.round(
-              data.volume * 100
-            );
-      
-        } catch {}
-      
+          mediaRecorder.start();
+
+          gravando = true;
+          SpeechButton.textContent = "⏹️ PARAR";
+          SpeechResult.textContent = "🎙️ Gravando...";
+        } else {
+          mediaRecorder.stop();
+          gravando = false;
+          SpeechButton.textContent = "🎙️ MICROFONE AO VIVO";
+        }
+      } catch {
+        SpeechResult.textContent = "❌ Erro ao acessar microfone";
       }
-      
-      async function carregarMusicas() {
-      
-        try {
-      
-          const res =
-            await fetch("/playlist");
-      
-          const musics =
-            await res.json();
-      
-          MusicGrid.innerHTML = "";
-      
-          musics.forEach(music => {
-      
-            const card =
-              document.createElement("div");
-      
-            card.className =
-              "MusicCard";
-      
-            card.textContent =
-              music.name;
-      
-            MusicGrid.appendChild(card);
-      
-          });
-      
-        } catch {}
-      
-      }
-      
-      VolumeSlider.addEventListener(
-        "input",
-        async () => {
-      
-          const volume =
-            VolumeSlider.value / 100;
-      
-          try {
-      
-            await fetch("/volume", {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                "application/json"
-              },
-              body: JSON.stringify({
-                volume
-              })
-            });
-      
-          } catch {}
-      
-        }
-      );
-      
-      MusicUpload.addEventListener(
-        "change",
-        () => {
-      
-          FileList.innerHTML = "";
-      
-          [...MusicUpload.files]
-            .forEach(file => {
-      
-              const div =
-                document.createElement(
-                  "div"
-                );
-      
-              div.textContent =
-                file.name;
-      
-              FileList.appendChild(
-                div
-              );
-      
-            });
-      
-        }
-      );
-      
-      PostButton.addEventListener(
-        "click",
-        async () => {
-      
-          if (
-            MusicUpload.files.length === 0
-          ) {
-      
-            alert(
-              "Selecione uma música."
-            );
-      
-            return;
-      
-          }
-      
-          const formData =
-            new FormData();
-      
-          for (
-            const file of
-            MusicUpload.files
-          ) {
-      
-            formData.append(
-              "musics",
-              file
-            );
-      
-          }
-      
-          try {
-      
-            const res =
-              await fetch(
-                "/upload",
-                {
-                  method: "POST",
-                  body: formData
-                }
-              );
-      
-            if (!res.ok) {
-      
-              throw new Error();
-      
-            }
-      
-            alert(
-              "Músicas enviadas com sucesso."
-            );
-      
-            MusicUpload.value = "";
-      
-            FileList.innerHTML = "";
-      
-            carregarMusicas();
-      
-          } catch {
-      
-            alert(
-              "Erro ao enviar músicas."
-            );
-      
-          }
-      
-        }
-      );
-      
-      let mediaRecorder;
-      let audioChunks = [];
-      let gravando = false;
-      
-      SpeechButton.addEventListener(
-        "click",
-        async () => {
-      
-          try {
-      
-            if (!gravando) {
-      
-              const stream =
-                await navigator
-                .mediaDevices
-                .getUserMedia({
-                  audio: true
-                });
-      
-              mediaRecorder =
-                new MediaRecorder(
-                  stream
-                );
-      
-              audioChunks = [];
-      
-              mediaRecorder.ondataavailable =
-                event => {
-      
-                  if (
-                    event.data &&
-                    event.data.size > 0
-                  ) {
-                    audioChunks.push(
-                      event.data
-                    );
-                  }
-      
-                };
-      
-              mediaRecorder.onstop =
-                async () => {
-      
-                  const audioBlob =
-                    new Blob(
-                      audioChunks,
-                      {
-                        type:
-                        "audio/webm"
-                      }
-                    );
-      
-                  const formData =
-                    new FormData();
-      
-                  formData.append(
-                    "audio",
-                    audioBlob,
-                    "microfone.webm"
-                  );
-      
-                  try {
-      
-                    const res =
-                      await fetch(
-                        "/speech-audio",
-                        {
-                          method:
-                          "POST",
-                          body:
-                          formData
-                        }
-                      );
-      
-                    if (!res.ok) {
-                      throw new Error();
-                    }
-      
-                    SpeechResult.textContent =
-                      "✅ Áudio enviado";
-      
-                  } catch {
-      
-                    SpeechResult.textContent =
-                      "❌ Erro ao enviar áudio";
-      
-                  }
-      
-                };
-      
-              mediaRecorder.start();
-      
-              gravando = true;
-      
-              SpeechButton.textContent =
-                "⏹️ PARAR";
-      
-              SpeechResult.textContent =
-                "🎙️ Gravando...";
-      
-            } else {
-      
-              mediaRecorder.stop();
-      
-              gravando = false;
-      
-              SpeechButton.textContent =
-                "🎙️ MICROFONE AO VIVO";
-      
-            }
-      
-          } catch {
-      
-            SpeechResult.textContent =
-              "❌ Erro ao acessar microfone";
-      
-          }
-      
-        }
-      );
-      
-      carregarVolume();
-      carregarMusicas();
-    </script>
-  </body>
+    });
+
+    carregarVolume();
+    carregarMusicas();
+  </script>
+</body>
 </html>
