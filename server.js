@@ -80,7 +80,7 @@ async function loadAudios() {
 
   const files = fs
     .readdirSync(publicAudiosDir)
-    .filter(file => file.endsWith('.mp3'));
+    .filter(file => file.toLowerCase().endsWith('.mp3'));
 
   for (const file of files) {
     try {
@@ -92,7 +92,12 @@ async function loadAudios() {
         name: file,
         duration: metadata.format.duration || 0
       });
-    } catch {}
+    } catch {
+      playlist.push({
+        name: file,
+        duration: 0
+      });
+    }
   }
 }
 
@@ -102,7 +107,7 @@ function checkMusic() {
   const current = playlist[currentIndex];
   const elapsed = (Date.now() - startTime) / 1000;
 
-  if (elapsed >= current.duration) {
+  if (current.duration > 0 && elapsed >= current.duration) {
     currentIndex = (currentIndex + 1) % playlist.length;
     startTime = Date.now();
   }
@@ -149,6 +154,24 @@ app.get('/volume', (req, res) => {
   });
 });
 
+app.post('/volume', requireAdmin, (req, res) => {
+  const { volume } = req.body;
+
+  globalVolume = Math.max(0, Math.min(2, Number(volume) || 1));
+
+  io.emit('volumeUpdate', globalVolume);
+
+  res.json({
+    success: true
+  });
+});
+
+/*
+  EFEITO SONORO:
+  - pausa a música
+  - toca o efeito
+  - quando o efeito terminar, o cliente volta a música
+*/
 app.post(
   '/priority-audio',
   requireAdmin,
@@ -161,6 +184,7 @@ app.post(
       });
     }
 
+    io.emit('pauseMusic');
     io.emit('priorityAudio', req.file.buffer);
 
     return res.json({
@@ -169,17 +193,64 @@ app.post(
   }
 );
 
-app.post('/volume', requireAdmin, (req, res) => {
-  const { volume } = req.body;
+/*
+  FALA POR TEXTO:
+  - pausa a música
+  - interrompe efeito sonoro
+  - toca a fala
+*/
+app.post('/speech', requireAdmin, (req, res) => {
+  const { text } = req.body;
 
-  globalVolume = Math.max(0, Math.min(2, Number(volume)));
+  if (!text || !String(text).trim()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Texto inválido'
+    });
+  }
 
-  io.emit('volumeUpdate', globalVolume);
+  io.emit('pauseMusic');
+  io.emit('stopPriorityAudio');
+  io.emit('speech', String(text));
 
   res.json({
     success: true
   });
 });
+
+/*
+  FALA POR ÁUDIO:
+  - pausa a música
+  - interrompe efeito sonoro
+  - toca a fala
+*/
+app.post(
+  '/speech-audio',
+  requireAdmin,
+  audioUpload.single('audio'),
+  (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhum áudio enviado'
+      });
+    }
+
+    try {
+      const audioBuffer = fs.readFileSync(req.file.path);
+
+      io.emit('pauseMusic');
+      io.emit('stopPriorityAudio');
+      io.emit('speechAudio', audioBuffer);
+
+      return res.json({
+        success: true
+      });
+    } finally {
+      fs.unlink(req.file.path, () => {});
+    }
+  }
+);
 
 app.get('/admin', (req, res) => {
   if (req.session?.isAdmin) {
@@ -224,43 +295,6 @@ app.post(
     res.json({
       success: true
     });
-  }
-);
-
-app.post('/speech', requireAdmin, (req, res) => {
-  const { text } = req.body;
-
-  io.emit('pauseMusic');
-  io.emit('speech', text);
-
-  res.json({
-    success: true
-  });
-});
-
-app.post(
-  '/speech-audio',
-  requireAdmin,
-  audioUpload.single('audio'),
-  (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        error: 'Nenhum áudio enviado'
-      });
-    }
-
-    try {
-      const audioBuffer = fs.readFileSync(req.file.path);
-
-      io.emit('speechAudio', audioBuffer);
-
-      return res.json({
-        success: true
-      });
-    } finally {
-      fs.unlink(req.file.path, () => {});
-    }
   }
 );
 
